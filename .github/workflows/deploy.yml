@@ -53,6 +53,22 @@ jobs:
         run: |
           batch_file="$RUNNER_TEMP/deploy.sftp"
           printf '%s\n' 'put -R dist /public/fanfares' > "$batch_file"
+          host_key_algorithms="$(
+            awk '
+              /^[[:space:]]*($|#)/ { next }
+              {
+                field = ($1 ~ /^@/) ? 3 : 2
+                if ($field != "") {
+                  print $field
+                }
+              }
+            ' "$GITHUB_WORKSPACE/.sftp-known_hosts" | sort -u | paste -sd, -
+          )"
+
+          if [ -z "$host_key_algorithms" ]; then
+            echo "Could not determine any host key algorithms from SFTP_KNOWN_HOSTS." >&2
+            exit 1
+          fi
 
           if [ -n "$SFTP_PRIVATE_KEY" ]; then
             key_file="$RUNNER_TEMP/sftp-private-key"
@@ -62,6 +78,7 @@ jobs:
             sftp \
               -b "$batch_file" \
               -P 22 \
+              -o HostKeyAlgorithms="$host_key_algorithms" \
               -o StrictHostKeyChecking=yes \
               -o UserKnownHostsFile="$GITHUB_WORKSPACE/.sftp-known_hosts" \
               -i "$key_file" \
@@ -76,6 +93,7 @@ jobs:
               -oBatchMode=no \
               -b "$batch_file" \
               -P 22 \
+              -o HostKeyAlgorithms="$host_key_algorithms" \
               -o StrictHostKeyChecking=yes \
               -o UserKnownHostsFile="$GITHUB_WORKSPACE/.sftp-known_hosts" \
               "$SFTP_USERNAME@$SFTP_HOST"

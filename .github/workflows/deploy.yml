@@ -32,10 +32,8 @@ jobs:
 
       - name: Configure pinned SFTP host key
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$SFTP_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          printf '%s\n' "$SFTP_KNOWN_HOSTS" > "$GITHUB_WORKSPACE/.sftp-known_hosts"
+          chmod 600 "$GITHUB_WORKSPACE/.sftp-known_hosts"
 
       - name: Validate deploy credentials
         run: |
@@ -56,7 +54,7 @@ jobs:
           remote_path: /public/fanfares
           sftp_only: true
           delete_remote_files: true
-          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/home/.ssh/known_hosts
+          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/workspace/.sftp-known_hosts
 
       - name: Deploy via SFTP with password
         if: ${{ env.SFTP_PRIVATE_KEY == '' && env.SFTP_PASSWORD != '' }}
@@ -70,4 +68,4 @@ jobs:
           remote_path: /public/fanfares
           sftp_only: true
           delete_remote_files: true
-          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/home/.ssh/known_hosts
+          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/workspace/.sftp-known_hosts

@@ -31,6 +31,12 @@ jobs:
           printf '%s\n' "${{ secrets.SFTP_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Validate deploy credentials
+        if: ${{ secrets.SFTP_PRIVATE_KEY == '' && secrets.SFTP_PASSWORD == '' }}
+        run: |
+          echo "Set SFTP_PRIVATE_KEY or SFTP_PASSWORD before running this deploy." >&2
+          exit 1
+
       - name: Deploy via SFTP with private key
         if: ${{ secrets.SFTP_PRIVATE_KEY != '' }}
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
@@ -39,21 +45,21 @@ jobs:
           server: ${{ secrets.SFTP_HOST }}
           port: 22
           ssh_private_key: ${{ secrets.SFTP_PRIVATE_KEY }}
-          local_path: ./dist/*
+          local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
           delete_remote_files: true
           sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/home/.ssh/known_hosts
 
       - name: Deploy via SFTP with password
-        if: ${{ secrets.SFTP_PRIVATE_KEY == '' }}
+        if: ${{ secrets.SFTP_PRIVATE_KEY == '' && secrets.SFTP_PASSWORD != '' }}
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           server: ${{ secrets.SFTP_HOST }}
           port: 22
           password: ${{ secrets.SFTP_PASSWORD }}
-          local_path: ./dist/*
+          local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
           delete_remote_files: true

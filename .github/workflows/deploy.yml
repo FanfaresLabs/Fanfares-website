@@ -30,11 +30,6 @@ jobs:
           test -d dist
           test -f dist/index.html
 
-      - name: Configure pinned SFTP host key
-        run: |
-          printf '%s\n' "$SFTP_KNOWN_HOSTS" > "$GITHUB_WORKSPACE/.sftp-known_hosts"
-          chmod 600 "$GITHUB_WORKSPACE/.sftp-known_hosts"
-
       - name: Validate deploy credentials
         run: |
           if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_KNOWN_HOSTS" ]; then
@@ -46,6 +41,11 @@ jobs:
             echo "Set SFTP_PRIVATE_KEY or SFTP_PASSWORD before running this deploy." >&2
             exit 1
           fi
+
+      - name: Configure pinned SFTP host key
+        run: |
+          printf '%s\n' "$SFTP_KNOWN_HOSTS" > "$GITHUB_WORKSPACE/.sftp-known_hosts"
+          chmod 600 "$GITHUB_WORKSPACE/.sftp-known_hosts"
 
       - name: Deploy via SFTP with private key
         if: ${{ env.SFTP_PRIVATE_KEY != '' }}

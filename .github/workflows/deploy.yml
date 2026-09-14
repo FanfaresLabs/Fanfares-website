@@ -59,7 +59,7 @@ jobs:
           remote_path: /public/fanfares
           sftp_only: true
           delete_remote_files: true
-         sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts
+          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts
 
       - name: Deploy via SFTP with password
         if: ${{ env.SFTP_PRIVATE_KEY == '' && env.SFTP_PASSWORD != '' }}

@@ -58,7 +58,7 @@ jobs:
           local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
-          delete_remote_files: true
+          delete_remote_files: false
           sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts
 
       - name: Deploy via SFTP with password
@@ -72,5 +72,5 @@ jobs:
           local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
-          delete_remote_files: true
+          delete_remote_files: false
           sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts

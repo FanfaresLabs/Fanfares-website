@@ -13,10 +13,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      # This repo deploys the committed static dist/ build output.
+      # Keep these secrets configured in GitHub Actions:
+      # - SFTP_HOST
+      # - SFTP_USERNAME
+      # - SFTP_PASSWORD
+      # Optional hardening:
+      # - SFTP_HOST_FINGERPRINT (recommended to pin the server host key)
+      - name: Verify built site artifact
+        run: |
+          test -d dist
+          test -f dist/index.html
+
+      - name: Deploy via SFTP mirror
+        uses: pressidium/lftp-mirror-action@v1
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
+          host: ${{ secrets.SFTP_HOST }}
+          port: 22
+          user: ${{ secrets.SFTP_USERNAME }}
+          pass: ${{ secrets.SFTP_PASSWORD }}
+          fingerprint: ${{ secrets.SFTP_HOST_FINGERPRINT }}
+          localDir: ./dist
+          remoteDir: /public/fanfares
+          reverse: true
+          onlyNewer: false
+          options: --delete --verbose
+          settings: sftp:auto-confirm=yes

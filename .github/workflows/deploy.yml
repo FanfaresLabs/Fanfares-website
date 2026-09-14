@@ -8,15 +8,64 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      SFTP_HOST: ${{ secrets.SFTP_HOST }}
+      SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+      SFTP_KNOWN_HOSTS: ${{ secrets.SFTP_KNOWN_HOSTS }}
+      SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+      SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      # This repo deploys the committed static dist/ build output.
+      # Keep these secrets configured in GitHub Actions:
+      # - SFTP_HOST
+      # - SFTP_USERNAME
+      # - SFTP_KNOWN_HOSTS (full known_hosts entry for the SFTP host)
+      # - SFTP_PRIVATE_KEY (preferred) or SFTP_PASSWORD (fallback)
+      - name: Verify built site artifact
+        run: |
+          test -d dist
+          test -f dist/index.html
+
+      - name: Configure pinned SFTP host key
+        run: |
+          printf '%s\n' "$SFTP_KNOWN_HOSTS" > "$GITHUB_WORKSPACE/.sftp-known_hosts"
+          chmod 600 "$GITHUB_WORKSPACE/.sftp-known_hosts"
+
+      - name: Validate deploy credentials
+        run: |
+          if [ -z "$SFTP_PRIVATE_KEY" ] && [ -z "$SFTP_PASSWORD" ]; then
+            echo "Set SFTP_PRIVATE_KEY or SFTP_PASSWORD before running this deploy." >&2
+            exit 1
+          fi
+
+      - name: Deploy via SFTP with private key
+        if: ${{ env.SFTP_PRIVATE_KEY != '' }}
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
+          username: ${{ env.SFTP_USERNAME }}
+          server: ${{ env.SFTP_HOST }}
+          port: 22
+          ssh_private_key: ${{ env.SFTP_PRIVATE_KEY }}
+          local_path: ./dist
+          remote_path: /public/fanfares
+          sftp_only: true
+          delete_remote_files: true
+          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/workspace/.sftp-known_hosts
+
+      - name: Deploy via SFTP with password
+        if: ${{ env.SFTP_PRIVATE_KEY == '' && env.SFTP_PASSWORD != '' }}
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ env.SFTP_USERNAME }}
+          server: ${{ env.SFTP_HOST }}
+          port: 22
+          password: ${{ env.SFTP_PASSWORD }}
+          local_path: ./dist
+          remote_path: /public/fanfares
+          sftp_only: true
+          delete_remote_files: true
+          sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/github/workspace/.sftp-known_hosts

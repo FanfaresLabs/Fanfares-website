@@ -57,17 +57,19 @@ jobs:
             awk '
               /^[[:space:]]*($|#)/ { next }
               {
-                field = ($1 ~ /^@/) ? 3 : 2
-                if ($field != "") {
-                  print $field
+                for (i = 1; i <= NF; i++) {
+                  if ($i ~ /^(ssh-ed25519|ssh-rsa|ssh-dss|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)$/) {
+                    print $i
+                  }
                 }
               }
             ' "$GITHUB_WORKSPACE/.sftp-known_hosts" | sort -u | paste -sd, -
           )"
-
-          if [ -z "$host_key_algorithms" ]; then
-            echo "Could not determine any host key algorithms from SFTP_KNOWN_HOSTS." >&2
-            exit 1
+          host_key_algorithms_option=()
+          if [ -n "$host_key_algorithms" ]; then
+            host_key_algorithms_option=(-o "HostKeyAlgorithms=$host_key_algorithms")
+          else
+            echo "Warning: could not parse host key algorithms from SFTP_KNOWN_HOSTS; using OpenSSH defaults." >&2
           fi
 
           if [ -n "$SFTP_PRIVATE_KEY" ]; then
@@ -78,7 +80,7 @@ jobs:
             sftp \
               -b "$batch_file" \
               -P 22 \
-              -o HostKeyAlgorithms="$host_key_algorithms" \
+              "${host_key_algorithms_option[@]}" \
               -o StrictHostKeyChecking=yes \
               -o UserKnownHostsFile="$GITHUB_WORKSPACE/.sftp-known_hosts" \
               -i "$key_file" \
@@ -93,7 +95,7 @@ jobs:
               -oBatchMode=no \
               -b "$batch_file" \
               -P 22 \
-              -o HostKeyAlgorithms="$host_key_algorithms" \
+              "${host_key_algorithms_option[@]}" \
               -o StrictHostKeyChecking=yes \
               -o UserKnownHostsFile="$GITHUB_WORKSPACE/.sftp-known_hosts" \
               "$SFTP_USERNAME@$SFTP_HOST"

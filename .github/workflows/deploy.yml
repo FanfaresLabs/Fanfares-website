@@ -18,8 +18,7 @@ jobs:
       # - SFTP_HOST
       # - SFTP_USERNAME
       # - SFTP_PASSWORD
-      # Optional hardening:
-      # - SFTP_HOST_FINGERPRINT (recommended to pin the server host key)
+      # - SFTP_HOST_FINGERPRINT (required to pin the server host key)
       - name: Verify built site artifact
         run: |
           test -d dist
@@ -38,4 +37,3 @@ jobs:
           reverse: true
           onlyNewer: false
           options: --delete --verbose
-          settings: sftp:auto-confirm=yes

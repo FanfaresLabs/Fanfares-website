@@ -47,6 +47,8 @@ jobs:
             exit 1
           fi
 
+      # The IONOS account is SFTP-restricted and rejects remote shell exec calls.
+      # Keep delete_remote_files disabled or deploy will fail; removed local files can remain remotely.
       - name: Deploy via SFTP with private key
         if: ${{ env.SFTP_PRIVATE_KEY != '' }}
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
@@ -58,7 +60,7 @@ jobs:
           local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
-          delete_remote_files: true
+          delete_remote_files: false
           sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts
 
       - name: Deploy via SFTP with password
@@ -72,5 +74,5 @@ jobs:
           local_path: ./dist
           remote_path: /public/fanfares
           sftp_only: true
-          delete_remote_files: true
+          delete_remote_files: false
           sftpArgs: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${{ github.workspace }}/.sftp-known_hosts
